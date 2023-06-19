@@ -1,0 +1,38 @@
+version: '3.7'
+
+networks:
+  emanager:
+    name: emanager-network
+
+services:
+  db:
+    image: mariadb
+    container_name: emanager_db
+    restart: always
+    ports:
+      - 0.0.0.0:3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=emanager
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    volumes:
+      - ./db_data:/var/lib/mysql
+    networks:
+      - emanager
+
+  backend:
+    build: .
+    container_name: emanager_backend
+    command: python /repo/manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/repo
+    ports:
+      - 0.0.0.0:8000:8000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - emanager
